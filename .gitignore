@@ -52,6 +52,7 @@ Mkfile.old
 dkms.conf
 
 # project files
+*.docx
 .zshlocal
 common.o 
 client 
