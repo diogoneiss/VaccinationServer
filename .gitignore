@@ -55,6 +55,6 @@ dkms.conf
 *.docx
 .zshlocal
 common.o 
-client 
-server 
+cliente
+servidor
 server-mt
