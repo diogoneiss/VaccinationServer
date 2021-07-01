@@ -15,7 +15,7 @@ void usage(int argc, char **argv) {
 	exit(EXIT_FAILURE);
 }
 
-#define BUFSZ 1024
+#define BUFSZ 500
 
 int main(int argc, char **argv) {
 	if (argc < 3) {
@@ -30,9 +30,9 @@ int main(int argc, char **argv) {
 	int s;
 	char addrstr[BUFSZ];
 	char buf[BUFSZ];
-	unsigned totalMessages = 0;
+	//unsigned totalMessages = 0;
 
-	while (1) {
+	
 		s = socket(storage.ss_family, SOCK_STREAM, 0);
 		if (s == -1) {
 			logexit("socket");
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 		addrtostr(addr, addrstr, BUFSZ);
 
 		// printf("connected to %s", addrstr);
-
+while (1) {
 		printf("mensagem: ");
 		memset(buf, 0, BUFSZ);
 		fgets(buf, BUFSZ - 1, stdin);
@@ -53,31 +53,46 @@ int main(int argc, char **argv) {
 		if (strstr(buf, "kill") > 0) {
 			break;
 		}
+		
+		//ver os chars enviados
+		for(int i = 0; i< strlen(buf); i++){
+			//printf("[%d]", buf[i]);
+		}
+	
+		int newLen = strlen(buf);
+		//send
+		size_t count = send(s, buf, newLen , 0);
 
-		size_t count = send(s, buf, strlen(buf) + 1, 0);
-		if (count != strlen(buf) + 1) {
+
+		if (count != newLen ) {
 			logexit("send");
+			puts("Erro no send");
 		}
 
 		memset(buf, 0, BUFSZ);
-		unsigned total = 0;
-
-		// loop de recebimento da mensagem, até o total for recebido
-		while (1) {
-			count = recv(s, buf + total, BUFSZ - total, 0);
-			if (count == 0) {
-				// Connection terminated.
-				break;
-			}
-			total += count;
-			totalMessages += count;
-		}
-		close(s);
-	}
 	
 
-	printf("received %u bytes\n", totalMessages);
-	puts(buf);
+		// loop de recebimento da mensagem, até o total for recebido
+
+      int index = 0;
+
+/*
+      while ((count = recv(s, &buf[index], BUFSZ - index, 0)) > 0) {
+		  printf("Current count: %ld\n", count);
+        index += count;
+  
+      }*/
+		count = recv(s, buf, BUFSZ, 0);			
+
+
+		//printf("received %u bytes\n", totalMessages);
+		puts(buf);
+
+	
+	}
+	
+	close(s);
+
 
 	exit(EXIT_SUCCESS);
 }
