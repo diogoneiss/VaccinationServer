@@ -89,7 +89,7 @@ NODE *free_list() {
  * returns 1 if already
  * returns 0 if sucessful
  */
-int addLocation(int x, int y) {
+int addLocation(int x, int y, char *output) {
 
 	DATA novaEntrada;
 
@@ -97,33 +97,45 @@ int addLocation(int x, int y) {
 	novaEntrada.yCoordinate = y;
 
 	// check to see if max size achieved
-	if (locationsSize == 50)
+	if (locationsSize == 50) {
+		strcat(output, "limit exceeded\n");
+
 		return 2;
+	}
 
 	// check for existing values
 	for (NODE *temp = head; temp != NULL; temp = temp->next) {
 		DATA atual = temp->data;
 
 		if (atual.xCoordinate == x && atual.yCoordinate == y) {
+			sprintf(output, "%d %d already exists\n", x, y);
+
 			return 1;
 		}
 	}
 	locationsSize++;
 	addToLinkedList(novaEntrada);
+	sprintf(output, "%d %d added\n", x, y);
+
 	return 0;
 }
 
 // returns if its found
-int rmLocation(int x, int y) {
+int rmLocation(int x, int y, char *output) {
 	int found = false;
 	NODE *predecessor = head;
 
-	// case where the head is deleted
+	if (head == NULL) {
+		sprintf(output, "%d %d does not exist\n", x, y);
+		return found;
+	}
+
+	// case where the head must be deleted
 	if (head->data.xCoordinate == x && head->data.yCoordinate == y) {
 		NODE *tempHead = head;
 		head = head->next;
 		free(tempHead);
-
+		sprintf(output, "%d %d removed\n", x, y);
 		return true;
 	}
 
@@ -134,27 +146,33 @@ int rmLocation(int x, int y) {
 		if (atual.xCoordinate == x && atual.yCoordinate == y) {
 			if (current == head) {
 				head = head->next;
-				// free(head);
+				free(head);
 			} else {
-
 				predecessor->next = current->next;
 				free(current);
 			}
 
 			found = true;
 			locationsSize--;
-			break;
+			sprintf(output, "%d %d removed\n", x, y);
+
+			return found;
 		}
 		// andar com o antecessor
 		predecessor = predecessor->next;
 	}
+	// if it wasnt find so far, it does not exist.
+	sprintf(output, "%d %d does not exist\n", x, y);
 
 	return found;
 }
 
-char *closestPoint(int x, int y) {
-	if (head == NULL)
-		return "none";
+int closestPoint(int x, int y, char *output) {
+	if (head == NULL) {
+
+		strcat(output, "none\n\0");
+		return 1;
+	}
 
 	NODE *temp = head;
 	int currentClosestX = head->data.xCoordinate;
@@ -166,10 +184,12 @@ char *closestPoint(int x, int y) {
 		 ((temp->data.yCoordinate - y) * (temp->data.yCoordinate - y));
 
 	for (temp; temp != NULL; temp = temp->next) {
+		int currentX = temp->data.xCoordinate;
+		int currentY = temp->data.yCoordinate;
 
 		long newValue =
-			 ((temp->data.xCoordinate - x) * (temp->data.xCoordinate - x)) +
-			 ((temp->data.yCoordinate - y) * (temp->data.yCoordinate - y));
+			 (currentX - x) * (currentX - x) + (currentY - y) * (currentY - y);
+
 		if (closestDistance > newValue) {
 			closestDistance = newValue;
 			currentClosestX = temp->data.xCoordinate;
@@ -177,15 +197,14 @@ char *closestPoint(int x, int y) {
 		}
 	}
 
-	char *output = (char *)malloc(BUFSZ);
 	sprintf(output, "%d %d\n", currentClosestX, currentClosestY);
 
-	return output;
+	return 0;
 }
 
 char *parseInput(char *buf) {
 	char *outputString = (char *)malloc(sizeof(char) * BUFSZ);
-	if (strstr(buf, "ist") != NULL) {
+	if (strstr(buf, "list") != NULL) {
 		outputString = print_list();
 		return outputString;
 
@@ -209,16 +228,7 @@ char *parseInput(char *buf) {
 			puts("Caso de adicao");
 			int xParseado = atoi(splittedInputBySpaces[1]);
 			int yParseado = atoi(splittedInputBySpaces[2]);
-			int output = addLocation(xParseado, yParseado);
-
-			if (output == 0) {
-				sprintf(outputString, "%d %d added\n", xParseado, yParseado);
-			} else if (output == 1) {
-				sprintf(outputString, "%d %d already exists\n", xParseado,
-						  yParseado);
-			} else {
-				strcat(outputString, "limit exceeded\n");
-			}
+			int output = addLocation(xParseado, yParseado, outputString);
 
 		}
 
@@ -226,14 +236,7 @@ char *parseInput(char *buf) {
 		else if (strstr(buf, "rm") > 0) {
 			int xParseado = atoi(splittedInputBySpaces[1]);
 			int yParseado = atoi(splittedInputBySpaces[2]);
-			int output = rmLocation(xParseado, yParseado);
-
-			if (output == true) {
-				sprintf(outputString, "%d %d removed\n", xParseado, yParseado);
-			} else if (output == false) {
-				sprintf(outputString, "%d %d does not exist\n", xParseado,
-						  yParseado);
-			}
+			int output = rmLocation(xParseado, yParseado, outputString);
 
 		}
 
@@ -241,11 +244,11 @@ char *parseInput(char *buf) {
 		else if (strstr(buf, "query") > 0) {
 			int xParseado = atoi(splittedInputBySpaces[1]);
 			int yParseado = atoi(splittedInputBySpaces[2]);
-			outputString = closestPoint(xParseado, yParseado);
+			closestPoint(xParseado, yParseado, outputString);
 		}
 
 		else {
-			return ("Operação não suportada");
+			strcat(outputString, "Operação não suportada");
 		}
 	}
 
@@ -328,34 +331,48 @@ int main(int argc, char **argv) {
 				finishedMessage = true;
 
 			} else if (strstr(buf, "\n") > 0) {
+				puts("A mensagem contém um \\n");
 				finishedMessage = true;
 			} else if (buf[count - 1] == '\n') {
+				puts("O último char da mensagem é um barra n");
 				finishedMessage = true;
 			}
 		}
+		buf[totalReceived + 1] = '\0';
 		if (strstr(buf, "ill") > 0) {
 			close(csock);
-			puts("Saindo do programa.");
+			// puts("Saindo do programa.");
 			break;
 		}
-		buf[totalReceived + 1] = '\0';
 
 		// TODO: Strings com múltiplas quebras de linha
+		int numberOfReturnTerminatedStrings =
+			 ocurrencesOfSubstring(buf, "\n") - 1;
+		printf("Há %d substrings terminadas com barra n\n",
+				 numberOfReturnTerminatedStrings);
+		char **arrayOfInputStrings = strsplit(buf, "\n");
+		int currentSubinput = 0;
 
-		addLocation(1, 1);
-		addLocation(2, 2);
+		// execute till all subtrings are pars ed
+		while (numberOfReturnTerminatedStrings > currentSubinput) {
+			// resetting the buffer
+			memset(buf, 0, BUFSZ);
+			// moving the current substring to buffer
+			strcat(buf, arrayOfInputStrings[currentSubinput]);
+			char *response = parseInput(buf);
 
-		char *response = parseInput(buf);
+			// printf("[msg] %s, %d bytes: %s\n", caddrstr, (int) count, buf);
+			// limpar buf antes de receber a resposta
 
-		printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
-		// limpar buf antes de receber a resposta
-		memset(buf, 0, BUFSZ);
-		// sprintf(buf, "remote endpoint: %.1000s\n", caddrstr);
-		strcat(buf, response);
+			// sprintf(buf, "remote endpoint: %.1000s\n", caddrstr);
+			memset(buf, 0, BUFSZ);
+			strcat(buf, response);
 
-		count = send(csock, buf, strlen(buf), 0);
-		if (count != strlen(buf) || count < 1) {
-			logexit("send");
+			count = send(csock, buf, strlen(buf), 0);
+			if (count != strlen(buf) || count < 1) {
+				logexit("send");
+			}
+			currentSubinput++;
 		}
 	}
 
