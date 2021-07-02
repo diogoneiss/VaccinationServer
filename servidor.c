@@ -37,10 +37,13 @@ NODE *head;
 
 void initLinkedList() { head = NULL; }
 
-char *print_list() {
+int print_list(char *output) {
 	NODE *temp;
-	char *output = (char *)malloc(BUFSZ);
-	memset(output, 0, BUFSZ);
+
+	if (head == NULL) {
+		strcat(output, "none\n");
+		return 1;
+	}
 
 	for (temp = head; temp != NULL; temp = temp->next) {
 		sprintf(output + strlen(output), "%d %d ", temp->data.xCoordinate,
@@ -48,7 +51,7 @@ char *print_list() {
 	}
 	strcat(output, "\n\0");
 
-	return output;
+	return 0;
 }
 
 void addToLinkedList(DATA data) {
@@ -205,7 +208,7 @@ int closestPoint(int x, int y, char *output) {
 char *parseInput(char *buf) {
 	char *outputString = (char *)malloc(sizeof(char) * BUFSZ);
 	if (strstr(buf, "list") != NULL) {
-		outputString = print_list();
+		print_list(outputString);
 		return outputString;
 
 	}
@@ -217,15 +220,15 @@ char *parseInput(char *buf) {
 
 		int splittedInputArgument = ocurrencesOfSubstring(buf, " ");
 
-		printf("Array splitado: %d\n", splittedInputArgument);
+		// printf("Array splitado: %d\n", splittedInputArgument);
 		for (int i = 0; i < splittedInputArgument; i++) {
-			printf("String: %s\n", splittedInputBySpaces[i]);
+			// printf("String: %s\n", splittedInputBySpaces[i]);
 		}
 
 		// casos de adicao
 		// addToLinkedList
 		if (strstr(buf, "add") > 0) {
-			puts("Caso de adicao");
+			// puts("Caso de adicao");
 			int xParseado = atoi(splittedInputBySpaces[1]);
 			int yParseado = atoi(splittedInputBySpaces[2]);
 			int output = addLocation(xParseado, yParseado, outputString);
@@ -313,28 +316,27 @@ int main(int argc, char **argv) {
 		memset(buf, 0, BUFSZ);
 		size_t count;
 		// unsigned total;
-		puts("Lendo mais uma mensagem");
+		printf("> ");
 
 		int finishedMessage = false;
 		int totalReceived = 0;
 
 		while (!finishedMessage) {
-			count = recv(csock, buf, BUFSZ, 0);
+			count = recv(csock, buf + totalReceived, BUFSZ - totalReceived, 0);
 			totalReceived += count;
-			for (int i = 0; i < count; i++)
-				printf("[%d] ", buf[i]);
-
-			puts("\n");
 
 			if (count == 0) {
 				puts("Count chegou 0");
+				if (totalReceived == 0) {
+					goto endOfProgram;
+				}
 				finishedMessage = true;
 
-			} else if (strstr(buf, "\n") > 0) {
-				puts("A mensagem contém um \\n");
-				finishedMessage = true;
 			} else if (buf[count - 1] == '\n') {
 				puts("O último char da mensagem é um barra n");
+				finishedMessage = true;
+			} else if (strstr(buf, "\n") > 0) {
+				puts("A mensagem contém um \\n");
 				finishedMessage = true;
 			}
 		}
@@ -344,7 +346,19 @@ int main(int argc, char **argv) {
 			// puts("Saindo do programa.");
 			break;
 		}
+		/*
+		puts("-----input -----------------------------------");
 
+		for(int i = 0; i < totalReceived; i++){
+			 printf("[%d] ", buf[i]);
+		}
+		puts("\n\n");
+
+		for(int i = 0; i < totalReceived; i++){
+			 printf("[%c] ", buf[i]);
+		}
+		puts("---------------------------------------------");
+*/
 		// TODO: Strings com múltiplas quebras de linha
 		int numberOfReturnTerminatedStrings =
 			 ocurrencesOfSubstring(buf, "\n") - 1;
@@ -376,5 +390,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
+endOfProgram:
 	exit(EXIT_SUCCESS);
 }

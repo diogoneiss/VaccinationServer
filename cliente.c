@@ -30,69 +30,62 @@ int main(int argc, char **argv) {
 	int s;
 	char addrstr[BUFSZ];
 	char buf[BUFSZ];
-	//unsigned totalMessages = 0;
+	// unsigned totalMessages = 0;
 
-	
-		s = socket(storage.ss_family, SOCK_STREAM, 0);
-		if (s == -1) {
-			logexit("socket");
-		}
-		struct sockaddr *addr = (struct sockaddr *)(&storage);
-		if (0 != connect(s, addr, sizeof(storage))) {
-			logexit("connect");
-		}
+	s = socket(storage.ss_family, SOCK_STREAM, 0);
+	if (s == -1) {
+		logexit("socket");
+	}
+	struct sockaddr *addr = (struct sockaddr *)(&storage);
+	if (0 != connect(s, addr, sizeof(storage))) {
+		logexit("connect");
+	}
 
-		addrtostr(addr, addrstr, BUFSZ);
+	addrtostr(addr, addrstr, BUFSZ);
 
-		// printf("connected to %s", addrstr);
-while (1) {
+	// printf("connected to %s", addrstr);
+	while (1) {
 		printf("mensagem: ");
 		memset(buf, 0, BUFSZ);
 		fgets(buf, BUFSZ - 1, stdin);
 
-		if (strstr(buf, "kill") > 0) {
-			break;
+		// if (strstr(buf, "kill") > 0) {
+		// 	break;
+		// }
+
+		// ver os chars enviados
+		for (int i = 0; i < strlen(buf); i++) {
+			// printf("[%d]", buf[i]);
 		}
-		
-		//ver os chars enviados
-		for(int i = 0; i< strlen(buf); i++){
-			//printf("[%d]", buf[i]);
-		}
-	
+
 		int newLen = strlen(buf);
-		//send
-		size_t count = send(s, buf, newLen , 0);
+		// send
+		size_t count = send(s, buf, newLen, 0);
 
-
-		if (count != newLen ) {
+		if (count != newLen) {
 			logexit("send");
 			puts("Erro no send");
 		}
 
 		memset(buf, 0, BUFSZ);
-	
 
 		// loop de recebimento da mensagem, até o total for recebido
 
-      int index = 0;
+		int index = 0;
 
-/*
-      while ((count = recv(s, &buf[index], BUFSZ - index, 0)) > 0) {
-		  printf("Current count: %ld\n", count);
-        index += count;
-  
-      }*/
-		count = recv(s, buf, BUFSZ, 0);			
+		/*
+				while ((count = recv(s, &buf[index], BUFSZ - index, 0)) > 0) {
+				  printf("Current count: %ld\n", count);
+				  index += count;
 
+				}*/
+		count = recv(s, buf, BUFSZ, 0);
 
-		//printf("received %u bytes\n", totalMessages);
+		// printf("received %u bytes\n", totalMessages);
 		puts(buf);
-
-	
 	}
-	
-	close(s);
 
+	close(s);
 
 	exit(EXIT_SUCCESS);
 }
